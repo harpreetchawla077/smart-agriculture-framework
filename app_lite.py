@@ -109,7 +109,7 @@ def main():
     st.markdown('<h1 class="main-header">🌾 Smart Agriculture Framework</h1>', unsafe_allow_html=True)
     st.markdown('<p style="text-align: center; font-size: 1.2rem; color: #666;">Advanced AI-Powered Crop Recommendation System</p>', unsafe_allow_html=True)
     
-    st.markdown('<div class="warning-box">ℹ️ Running in RBCA-only mode (lightweight version) - Full functionality available</div>', unsafe_allow_html=True)
+    st.markdown('<div class="warning-box">ℹ️ Running in RBCA-only mode (lightweight version) - Full functionality available - v1.1</div>', unsafe_allow_html=True)
     
     st.sidebar.markdown("## 🌱 Farm Parameters")
     st.sidebar.markdown("Enter your farm's environmental and soil conditions:")
