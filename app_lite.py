@@ -4,6 +4,14 @@ import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 
+# Page configuration - MUST BE FIRST
+st.set_page_config(
+    page_title="Smart Agriculture Framework",
+    page_icon="🌾",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # Optional plotly imports with fallbacks
 try:
     import plotly.graph_objects as go
@@ -12,15 +20,8 @@ try:
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
-    st.warning("⚠️ Plotly not available - running in basic mode without advanced visualizations")
 
-# Page configuration
-st.set_page_config(
-    page_title="Smart Agriculture Framework",
-    page_icon="🌾",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Page configuration moved above to be first command
 
 # Custom CSS for better styling
 st.markdown("""
@@ -115,6 +116,9 @@ def main():
     
     st.markdown('<h1 class="main-header">🌾 Smart Agriculture Framework</h1>', unsafe_allow_html=True)
     st.markdown('<p style="text-align: center; font-size: 1.2rem; color: #666;">Advanced AI-Powered Crop Recommendation System</p>', unsafe_allow_html=True)
+    
+    if not PLOTLY_AVAILABLE:
+        st.warning("⚠️ Plotly not available - running in basic mode without advanced visualizations")
     
     st.markdown('<div class="warning-box">ℹ️ Running in RBCA-only mode (lightweight version) - Full functionality available - v1.1</div>', unsafe_allow_html=True)
     
