@@ -1,11 +1,18 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
 import warnings
 warnings.filterwarnings('ignore')
+
+# Optional plotly imports with fallbacks
+try:
+    import plotly.graph_objects as go
+    import plotly.express as px
+    from plotly.subplots import make_subplots
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+    st.warning("⚠️ Plotly not available - running in basic mode without advanced visualizations")
 
 # Page configuration
 st.set_page_config(
@@ -182,48 +189,81 @@ def main():
             comp_df = pd.DataFrame(comparison_data)
             st.dataframe(comp_df, use_container_width=True)
             
-            conf_fig = go.Figure(data=[
-                go.Bar(x=[crop.replace('_', ' ').title() for crop, _ in recommendations[:10]],
-                       y=[score for _, score in recommendations[:10]],
-                       marker_color=px.colors.sequential.Viridis)
-            ])
-            conf_fig.update_layout(title="Top 10 Crop Suitability Confidence Scores", xaxis_title="Crops", yaxis_title="Confidence Score", height=400)
-            st.plotly_chart(conf_fig, use_container_width=True)
+            if PLOTLY_AVAILABLE:
+                conf_fig = go.Figure(data=[
+                    go.Bar(x=[crop.replace('_', ' ').title() for crop, _ in recommendations[:10]],
+                           y=[score for _, score in recommendations[:10]],
+                           marker_color=px.colors.sequential.Viridis)
+                ])
+                conf_fig.update_layout(title="Top 10 Crop Suitability Confidence Scores", xaxis_title="Crops", yaxis_title="Confidence Score", height=400)
+                st.plotly_chart(conf_fig, use_container_width=True)
+            else:
+                st.info("📊 Advanced visualizations require plotly - showing basic analysis instead")
+                basic_df = pd.DataFrame(recommendations[:10], columns=['Crop', 'Score'])
+                basic_df['Crop'] = basic_df['Crop'].str.replace('_', ' ').str.title()
+                st.bar_chart(basic_df.set_index('Crop'))
         
         with tab3:
             st.markdown("## Advanced Visualizations")
             
-            fig = make_subplots(rows=2, cols=2, subplot_titles=('Soil Nutrients (NPK)', 'Environmental Conditions', 'Soil pH Level', 'Parameter Summary'), specs=[[{"type": "bar"}, {"type": "bar"}], [{"type": "indicator"}, {"type": "bar"}]])
-            
-            fig.add_trace(go.Bar(x=['Nitrogen', 'Phosphorus', 'Potassium'], y=[input_params['N'], input_params['P'], input_params['K']], marker_color=['#FF6B6B', '#4ECDC4', '#45B7D1'], name='NPK'), row=1, col=1)
-            fig.add_trace(go.Bar(x=['Temperature (°C)', 'Humidity (%)', 'Rainfall (mm)'], y=[input_params['temperature'], input_params['humidity'], input_params['rainfall']], marker_color=['#FFA07A', '#98D8C8', '#87CEEB'], name='Environment'), row=1, col=2)
-            fig.add_trace(go.Indicator(mode="gauge+number", value=input_params['ph'], domain={'x': [0, 1], 'y': [0, 1]}, title={'text': "Soil pH"}, gauge={'axis': {'range': [None, 14]}, 'bar': {'color': "#2E8B57"}, 'steps': [{'range': [0, 6], 'color': "lightgray"}, {'range': [6, 8], 'color': "lightgreen"}, {'range': [8, 14], 'color': "lightgray"}], 'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 7}}), row=2, col=1)
-            
-            all_params = ['N', 'P', 'K', 'Temperature', 'Humidity', 'pH', 'Rainfall']
-            all_values = [input_params['N'], input_params['P'], input_params['K'], input_params['temperature'], input_params['humidity'], input_params['ph'], input_params['rainfall']]
-            fig.add_trace(go.Bar(x=all_params, y=all_values, marker_color=px.colors.qualitative.Set3, name='All Parameters'), row=2, col=2)
-            fig.update_layout(height=600, showlegend=False, title_text="Agricultural Parameter Analysis")
-            st.plotly_chart(fig, use_container_width=True)
-            
-            categories = ['N', 'P', 'K', 'Temperature', 'Humidity', 'pH', 'Rainfall']
-            normalized_values = []
-            for param in ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']:
-                val = input_params[param]
-                if param in ['N', 'P', 'K']:
-                    normalized_values.append(min(val / 100, 1.0))
-                elif param == 'temperature':
-                    normalized_values.append(min(val / 40, 1.0))
-                elif param == 'humidity':
-                    normalized_values.append(val / 100)
-                elif param == 'ph':
-                    normalized_values.append(val / 14)
-                elif param == 'rainfall':
-                    normalized_values.append(min(val / 300, 1.0))
-            
-            radar_fig = go.Figure()
-            radar_fig.add_trace(go.Scatterpolar(r=normalized_values, theta=categories, fill='toself', name='Your Farm Parameters', line_color='#2E8B57'))
-            radar_fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=True, title="Farm Parameter Profile", height=500)
-            st.plotly_chart(radar_fig, use_container_width=True)
+            if PLOTLY_AVAILABLE:
+                fig = make_subplots(rows=2, cols=2, subplot_titles=('Soil Nutrients (NPK)', 'Environmental Conditions', 'Soil pH Level', 'Parameter Summary'), specs=[[{"type": "bar"}, {"type": "bar"}], [{"type": "indicator"}, {"type": "bar"}]])
+                
+                fig.add_trace(go.Bar(x=['Nitrogen', 'Phosphorus', 'Potassium'], y=[input_params['N'], input_params['P'], input_params['K']], marker_color=['#FF6B6B', '#4ECDC4', '#45B7D1'], name='NPK'), row=1, col=1)
+                fig.add_trace(go.Bar(x=['Temperature (°C)', 'Humidity (%)', 'Rainfall (mm)'], y=[input_params['temperature'], input_params['humidity'], input_params['rainfall']], marker_color=['#FFA07A', '#98D8C8', '#87CEEB'], name='Environment'), row=1, col=2)
+                fig.add_trace(go.Indicator(mode="gauge+number", value=input_params['ph'], domain={'x': [0, 1], 'y': [0, 1]}, title={'text': "Soil pH"}, gauge={'axis': {'range': [None, 14]}, 'bar': {'color': "#2E8B57"}, 'steps': [{'range': [0, 6], 'color': "lightgray"}, {'range': [6, 8], 'color': "lightgreen"}, {'range': [8, 14], 'color': "lightgray"}], 'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 7}}), row=2, col=1)
+                
+                all_params = ['N', 'P', 'K', 'Temperature', 'Humidity', 'pH', 'Rainfall']
+                all_values = [input_params['N'], input_params['P'], input_params['K'], input_params['temperature'], input_params['humidity'], input_params['ph'], input_params['rainfall']]
+                fig.add_trace(go.Bar(x=all_params, y=all_values, marker_color=px.colors.qualitative.Set3, name='All Parameters'), row=2, col=2)
+                fig.update_layout(height=600, showlegend=False, title_text="Agricultural Parameter Analysis")
+                st.plotly_chart(fig, use_container_width=True)
+                
+                categories = ['N', 'P', 'K', 'Temperature', 'Humidity', 'pH', 'Rainfall']
+                normalized_values = []
+                for param in ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']:
+                    val = input_params[param]
+                    if param in ['N', 'P', 'K']:
+                        normalized_values.append(min(val / 100, 1.0))
+                    elif param == 'temperature':
+                        normalized_values.append(min(val / 40, 1.0))
+                    elif param == 'humidity':
+                        normalized_values.append(val / 100)
+                    elif param == 'ph':
+                        normalized_values.append(val / 14)
+                    elif param == 'rainfall':
+                        normalized_values.append(min(val / 300, 1.0))
+                
+                radar_fig = go.Figure()
+                radar_fig.add_trace(go.Scatterpolar(r=normalized_values, theta=categories, fill='toself', name='Your Farm Parameters', line_color='#2E8B57'))
+                radar_fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=True, title="Farm Parameter Profile", height=500)
+                st.plotly_chart(radar_fig, use_container_width=True)
+            else:
+                st.info("📊 Advanced visualizations require plotly - showing basic analysis instead")
+                
+                # Basic visualizations using Streamlit's built-in charts
+                st.subheader("Soil Nutrients (NPK)")
+                npk_data = pd.DataFrame({
+                    'Nutrient': ['Nitrogen', 'Phosphorus', 'Potassium'],
+                    'Value': [input_params['N'], input_params['P'], input_params['K']]
+                })
+                st.bar_chart(npk_data.set_index('Nutrient'))
+                
+                st.subheader("Environmental Conditions")
+                env_data = pd.DataFrame({
+                    'Parameter': ['Temperature (°C)', 'Humidity (%)', 'Rainfall (mm)'],
+                    'Value': [input_params['temperature'], input_params['humidity'], input_params['rainfall']]
+                })
+                st.bar_chart(env_data.set_index('Parameter'))
+                
+                st.subheader("All Parameters Summary")
+                all_data = pd.DataFrame({
+                    'Parameter': ['N', 'P', 'K', 'Temperature', 'Humidity', 'pH', 'Rainfall'],
+                    'Value': [input_params['N'], input_params['P'], input_params['K'], 
+                             input_params['temperature'], input_params['humidity'], 
+                             input_params['ph'], input_params['rainfall']]
+                })
+                st.bar_chart(all_data.set_index('Parameter'))
     
     else:
         st.markdown("""
